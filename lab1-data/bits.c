@@ -255,8 +255,24 @@ int logicalNeg(int x) {
  *  Max ops: 90
  *  Rating: 4
  */
+ // 想了三小时没想出来怎么拿最大位 part2参考了网上题解
 int howManyBits(int x) {
-  return 0;
+  int b16, b8, b4, b2, b1, b0;
+  // part1, 将负x逆转 -5 --> 4, 正x不变
+  x ^= ~(x >> 31 & 1) + 1;
+  // part2 取最大位
+  b16 = !!(x >> 16) << 4;
+  x >>= b16;
+  b8 = !!(x >> 8) << 3;
+  x >>= b8;
+  b4 = !!(x >> 4) << 2;
+  x >>= b4;
+  b2 = !!(x >> 2) << 1;
+  x >>= b2;
+  b1 = !!(x >> 1) << 1;
+  x >>= b1;
+  b0 = x;
+  return b16 + b8 + b4 + b2 + b1 + b0 + 1;
 }
 //float
 /* 
@@ -271,8 +287,24 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
-  return 2;
+  unsigned sign = uf >> 31 & 1;
+  unsigned exp = uf >> 23 & 0xFF;
+  unsigned frac = uf ^ sign << 31 ^ exp << 23;
+  // INF or NAN
+  if (!(exp ^ 0xFF)) return uf;
+  // Bias = (1 << 8 - 1) - 1 = 127
+  // DeNormal: E = 1 - 127 = -126, M = 0.f1f2f3...f23
+  if (!exp) {
+    // f1 == 0
+    if (frac >> 22 ^ 1) frac <<= 1;
+    else exp += 1, frac = frac << 1 ^ 1 << 23;
+  } else {
+    // Normal: E = exp - 127
+    exp += 1;
+  }
+  return sign << 31 | exp << 23 | frac;
 }
+
 /* 
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
  *   for floating point argument f.
@@ -285,8 +317,22 @@ unsigned floatScale2(unsigned uf) {
  *   Max ops: 30
  *   Rating: 4
  */
+ // float计算是round to even, float2int是直接舍弃小数
 int floatFloat2Int(unsigned uf) {
-  return 2;
+  unsigned sign = uf >> 31 & 1;
+  unsigned exp = uf >> 23 & 0xFF;
+  unsigned frac = uf ^ sign << 31 ^ exp << 23;
+  if (158 <= exp) return 1u << 31;
+  if (exp <= 126) return 0;
+  frac |= 1 << 23;
+  // exp: [127, 157]
+  if (150 <= exp) {
+    frac <<= exp - 150;
+  } else {
+    frac >>= 150 - exp;
+  }
+  if (sign) return ~frac + 1;
+  return frac;
 }
 /* 
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
@@ -301,6 +347,9 @@ int floatFloat2Int(unsigned uf) {
  *   Max ops: 30 
  *   Rating: 4
  */
+ // [-126, 127]
 unsigned floatPower2(int x) {
-    return 2;
+    if (x < -126) return 0;
+    if (127 < x) return 0xFF << 23;
+    return x + 0x7F << 23;
 }
