@@ -1,0 +1,6 @@
+b explode_bomb
+b phase_6
+layout asm
+layout reg
+x/12x 0x402470
+objdump -d bomb > bomb.s
