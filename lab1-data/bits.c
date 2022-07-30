@@ -269,7 +269,7 @@ int howManyBits(int x) {
   x >>= b4;
   b2 = !!(x >> 2) << 1;
   x >>= b2;
-  b1 = !!(x >> 1) << 1;
+  b1 = !!(x >> 1);
   x >>= b1;
   b0 = x;
   return b16 + b8 + b4 + b2 + b1 + b0 + 1;
